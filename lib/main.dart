@@ -1,17 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart'; // Firebase ana paketi
-import 'firebase_options.dart'; // Terminalden oluşturduğumuz ayar dosyası
+import 'screens/login_screen.dart'; // Giriş ekranının yolunu buraya ekledik
 
-import 'core/theme/app_theme.dart';
-import 'screens/home_screen.dart';
-
-void main() async {
-  // Flutter çizim motorunun Firebase ile senkronize çalışması için zorunlu adım
-  WidgetsFlutterBinding.ensureInitialized();
-
-  // Firebase'i projeye özel anahtarlarla başlatıyoruz
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
+void main() {
   runApp(const TravixApp());
 }
 
@@ -21,10 +11,15 @@ class TravixApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Travix',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme, // Profesyonel temamız
-      home: const HomeScreen(),
+      title: 'Travix - Akıllı Turizm Rehberi',
+      debugShowCheckedModeBanner:
+          false, // O çirkin kırmızı debug bandını kaldırır
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueAccent),
+        useMaterial3: true, // Modern, şık tasarım modu
+      ),
+      // Uygulama açılır açılmaz senin o haritalı LoginScreen ekranın gelecek
+      home: const LoginScreen(),
     );
   }
 }
