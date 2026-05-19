@@ -36,9 +36,21 @@ class AuthService {
     }
   }
 
-  // 3. ÇIKIŞ YAPMA (SIGN OUT)
+  // 3. GÜVENLİ ÇIKIŞ YAPMA (SIGN OUT)
   Future<void> signOut() async {
-    await _auth.signOut();
-    await _googleSignIn.signOut();
+    try {
+      // 1. Firebase (E-posta) çıkışını yap
+      await _auth.signOut();
+
+      // 2. Google çıkışını dene, donmayı önlemek için hatayı izole et
+      try {
+        await _googleSignIn.signOut();
+      } catch (e) {
+        // E-posta ile girildiği için burası hata fırlatırsa sessizce yut ve geç
+      }
+    } catch (e) {
+      // ignore: avoid_print
+      print("Çıkış yapılırken bir hata oluştu: $e");
+    }
   }
-}
+} // <-- İŞTE EKSİK OLAN VE KODU ÇÖKERTEN PARANTEZ BURADAYDI :)

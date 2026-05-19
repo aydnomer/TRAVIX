@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-// Yeni yazdığımız servisi sayfaya dahil ediyoruz
 import '../services/auth_service.dart';
+import 'home_screen.dart'; // YENİ EKLENDİ: Ana Sayfa Bağlantısı
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,16 +16,20 @@ class _LoginScreenState extends State<LoginScreen> {
   final Color bgLight = const Color(0xFFF9F9F9);
   final Color textDark = const Color(0xFF1E1E1E);
 
-  // --- MOTOR VE KONTROLCÜLER (YENİ EKLENEN KISIM) ---
+  // --- MOTOR VE KONTROLCÜLER ---
   final AuthService _authService = AuthService();
+
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _regEmailController = TextEditingController();
+  final TextEditingController _regPasswordController = TextEditingController();
 
-  // Hafıza sızıntılarını önlemek için sayfadan çıkınca kontrolcüleri temizliyoruz
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _regEmailController.dispose();
+    _regPasswordController.dispose();
     super.dispose();
   }
 
@@ -55,8 +59,113 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   // ==========================================
-  // 1. HERO BÖLÜMÜ
+  // KAYIT OL PENCERESİ (DIALOG)
   // ==========================================
+  void _showRegisterDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: bgLight,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(
+            'Yeni Hesap Oluştur',
+            style: TextStyle(color: primaryDark, fontWeight: FontWeight.bold),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Travix ile Türkiye\'yi keşfetmeye hemen başlayın.',
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+              ),
+              const SizedBox(height: 20),
+              _buildTextField(
+                Icons.mail_outline,
+                'E-posta adresi',
+                false,
+                _regEmailController,
+              ),
+              const SizedBox(height: 16),
+              _buildTextField(
+                Icons.lock_outline,
+                'Şifre (En az 6 hane)',
+                true,
+                _regPasswordController,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                'İptal',
+                style: TextStyle(
+                  color: Colors.grey.shade600,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final email = _regEmailController.text.trim();
+                final password = _regPasswordController.text.trim();
+
+                if (email.isNotEmpty && password.length >= 6) {
+                  final user = await _authService.signUpWithEmail(
+                    email,
+                    password,
+                  );
+                  if (user != null && context.mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Kayıt Başarılı! 🎉 Şimdi giriş yapabilirsiniz.',
+                        ),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  } else if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Kayıt başarısız. E-posta formatını kontrol edin.',
+                        ),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Lütfen geçerli bir e-posta ve en az 6 haneli şifre girin.',
+                      ),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryDark,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                'Kayıt Ol',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Widget _buildHeroSection(BuildContext context, bool isWeb) {
     return Container(
       height: isWeb ? MediaQuery.of(context).size.height : null,
@@ -202,7 +311,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(width: 10),
                 ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () => _showRegisterDialog(context),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: primaryDark,
@@ -259,9 +368,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // ==========================================
-  // 2. ÖZELLİKLER BÖLÜMÜ
-  // ==========================================
   Widget _buildFeaturesSection(bool isWeb) {
     return Container(
       width: double.infinity,
@@ -379,9 +485,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // ==========================================
-  // 3. NASIL ÇALIŞIR BÖLÜMÜ
-  // ==========================================
   Widget _buildHowItWorksSection(bool isWeb) {
     return Container(
       width: double.infinity,
@@ -517,9 +620,6 @@ class _LoginScreenState extends State<LoginScreen> {
     return isWeb ? Expanded(child: stepContent) : stepContent;
   }
 
-  // ==========================================
-  // 4. MÜŞTERİ YORUMLARI BÖLÜMÜ
-  // ==========================================
   Widget _buildTestimonialsSection(bool isWeb) {
     return Container(
       width: double.infinity,
@@ -642,9 +742,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // ==========================================
-  // 5. YAPAY ZEKA ASİSTANI BÖLÜMÜ
-  // ==========================================
   Widget _buildAIChatSection(bool isWeb) {
     return Container(
       width: double.infinity,
@@ -805,9 +902,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // ==========================================
-  // 6. FOOTER (Alt Bilgi Bölümü)
-  // ==========================================
   Widget _buildFooterSection(bool isWeb) {
     return Container(
       width: double.infinity,
@@ -1013,7 +1107,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   // ==========================================
-  // GİRİŞ FORMU (MOTOR BAĞLANTISI YAPILDI)
+  // GİRİŞ FORMU (GÜNCELLENDİ)
   // ==========================================
   Widget _buildLoginForm() {
     return Column(
@@ -1031,7 +1125,6 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
         const SizedBox(height: 24),
-        // KONTROLCÜLER EKLENDİ
         _buildTextField(
           Icons.mail_outline,
           'E-posta adresi',
@@ -1054,21 +1147,19 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(height: 24),
 
-        // BUTON ARTIK GERÇEK BİR İŞLEM YAPIYOR
         ElevatedButton(
           onPressed: () async {
-            // E-posta ve şifre kutularındaki yazıyı alıp Firebase'e yolluyoruz
             final email = _emailController.text.trim();
             final password = _passwordController.text.trim();
 
             if (email.isNotEmpty && password.isNotEmpty) {
               final user = await _authService.signInWithEmail(email, password);
+
               if (user != null && mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Başarıyla Giriş Yapıldı! 🎉'),
-                    backgroundColor: Colors.green,
-                  ),
+                // BAŞARILI GİRİŞ: Artık doğrudan Ana Sayfaya (HomeScreen) geçiş yapıyoruz!
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const HomeScreen()),
                 );
               } else if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -1127,19 +1218,22 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(height: 24),
         Center(
-          child: RichText(
-            text: TextSpan(
-              text: 'Hesabınız Yok mu? ',
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
-              children: [
-                TextSpan(
-                  text: 'Hemen Üye Ol.',
-                  style: TextStyle(
-                    color: primaryDark,
-                    fontWeight: FontWeight.bold,
+          child: GestureDetector(
+            onTap: () => _showRegisterDialog(context),
+            child: RichText(
+              text: TextSpan(
+                text: 'Hesabınız Yok mu? ',
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                children: [
+                  TextSpan(
+                    text: 'Hemen Üye Ol.',
+                    style: TextStyle(
+                      color: primaryDark,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -1147,7 +1241,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // Fonksiyona controller parametresi eklendi
   Widget _buildTextField(
     IconData icon,
     String hint,
@@ -1161,7 +1254,7 @@ class _LoginScreenState extends State<LoginScreen> {
         border: Border.all(color: Colors.grey.shade300),
       ),
       child: TextField(
-        controller: controller, // Yazılanları hafızaya alan kısım
+        controller: controller,
         obscureText: isPassword,
         decoration: InputDecoration(
           hintText: hint,
