@@ -1,17 +1,36 @@
 import 'package:flutter/material.dart';
+// Yeni yazdığımız servisi sayfaya dahil ediyoruz
+import '../services/auth_service.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
   // --- PREMIUM RENK PALETİ ---
-  final Color primaryDark = const Color(0xFF0F2C59); // Derin Okyanus Mavisi
-  final Color accentGold = const Color(0xFFDAC0A3); // Zarif Altın/Kum Tonu
-  final Color bgLight = const Color(0xFFF9F9F9); // Ferah arka plan
+  final Color primaryDark = const Color(0xFF0F2C59);
+  final Color accentGold = const Color(0xFFDAC0A3);
+  final Color bgLight = const Color(0xFFF9F9F9);
   final Color textDark = const Color(0xFF1E1E1E);
+
+  // --- MOTOR VE KONTROLCÜLER (YENİ EKLENEN KISIM) ---
+  final AuthService _authService = AuthService();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
+  // Hafıza sızıntılarını önlemek için sayfadan çıkınca kontrolcüleri temizliyoruz
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Ekran genişliğine göre Web veya Mobil olduğuna karar veriyoruz
     final isWeb = MediaQuery.of(context).size.width > 850;
 
     return Scaffold(
@@ -23,22 +42,11 @@ class LoginScreen extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // 1. HERO BÖLÜMÜ (Harita ve Giriş)
             _buildHeroSection(context, isWeb),
-
-            // 2. ÖZELLİKLER BÖLÜMÜ (Neden Travix?)
             _buildFeaturesSection(isWeb),
-
-            // 3. NASIL ÇALIŞIR BÖLÜMÜ
             _buildHowItWorksSection(isWeb),
-
-            // 4. MÜŞTERİ YORUMLARI BÖLÜMÜ
             _buildTestimonialsSection(isWeb),
-
-            // 5. YAPAY ZEKA ASİSTANI BÖLÜMÜ
             _buildAIChatSection(isWeb),
-
-            // 6. FOOTER (Alt Bilgi)
             _buildFooterSection(isWeb),
           ],
         ),
@@ -47,11 +55,10 @@ class LoginScreen extends StatelessWidget {
   }
 
   // ==========================================
-  // 1. HERO BÖLÜMÜ (Üst Kısım, Harita ve Giriş)
+  // 1. HERO BÖLÜMÜ
   // ==========================================
   Widget _buildHeroSection(BuildContext context, bool isWeb) {
     return Container(
-      // Web'de tam ekranı kaplasın ama en az 700 piksel olsun
       height: isWeb ? MediaQuery.of(context).size.height : null,
       constraints: isWeb ? const BoxConstraints(minHeight: 700) : null,
       decoration: BoxDecoration(
@@ -68,12 +75,10 @@ class LoginScreen extends StatelessWidget {
       child: Column(
         children: [
           _buildTopBar(isWeb),
-          // Sadece Web'de yatay Row ve Expanded kullanılır
           if (isWeb)
             Expanded(
               child: Row(
                 children: [
-                  // SOL TARAF (Yazılar)
                   Expanded(
                     flex: 6,
                     child: Padding(
@@ -122,7 +127,6 @@ class LoginScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                  // SAĞ TARAF (Giriş Formu)
                   Expanded(
                     flex: 4,
                     child: Center(
@@ -256,7 +260,7 @@ class LoginScreen extends StatelessWidget {
   }
 
   // ==========================================
-  // 2. ÖZELLİKLER BÖLÜMÜ (Neden Travix?)
+  // 2. ÖZELLİKLER BÖLÜMÜ
   // ==========================================
   Widget _buildFeaturesSection(bool isWeb) {
     return Container(
@@ -760,7 +764,6 @@ class LoginScreen extends StatelessWidget {
     return Align(
       alignment: isBot ? Alignment.centerLeft : Alignment.centerRight,
       child: Container(
-        // HATA ÇÖZÜLDÜ: maxWidth yerine constraints kullanıldı
         constraints: const BoxConstraints(maxWidth: 600),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -1010,7 +1013,7 @@ class LoginScreen extends StatelessWidget {
   }
 
   // ==========================================
-  // ORTAK YARDIMCI WIDGET'LAR
+  // GİRİŞ FORMU (MOTOR BAĞLANTISI YAPILDI)
   // ==========================================
   Widget _buildLoginForm() {
     return Column(
@@ -1028,9 +1031,15 @@ class LoginScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 24),
-        _buildTextField(Icons.mail_outline, 'E-posta adresi', false),
+        // KONTROLCÜLER EKLENDİ
+        _buildTextField(
+          Icons.mail_outline,
+          'E-posta adresi',
+          false,
+          _emailController,
+        ),
         const SizedBox(height: 16),
-        _buildTextField(Icons.lock_outline, 'Şifre', true),
+        _buildTextField(Icons.lock_outline, 'Şifre', true, _passwordController),
         const SizedBox(height: 12),
         Align(
           alignment: Alignment.centerRight,
@@ -1044,8 +1053,35 @@ class LoginScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 24),
+
+        // BUTON ARTIK GERÇEK BİR İŞLEM YAPIYOR
         ElevatedButton(
-          onPressed: () {},
+          onPressed: () async {
+            // E-posta ve şifre kutularındaki yazıyı alıp Firebase'e yolluyoruz
+            final email = _emailController.text.trim();
+            final password = _passwordController.text.trim();
+
+            if (email.isNotEmpty && password.isNotEmpty) {
+              final user = await _authService.signInWithEmail(email, password);
+              if (user != null && mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Başarıyla Giriş Yapıldı! 🎉'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } else if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Giriş başarısız. Bilgilerinizi kontrol edin.',
+                    ),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            }
+          },
           style: ElevatedButton.styleFrom(
             backgroundColor: primaryDark,
             padding: const EdgeInsets.symmetric(vertical: 18),
@@ -1062,6 +1098,7 @@ class LoginScreen extends StatelessWidget {
             ),
           ),
         ),
+
         const SizedBox(height: 24),
         Row(
           children: [
@@ -1110,7 +1147,13 @@ class LoginScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTextField(IconData icon, String hint, bool isPassword) {
+  // Fonksiyona controller parametresi eklendi
+  Widget _buildTextField(
+    IconData icon,
+    String hint,
+    bool isPassword,
+    TextEditingController controller,
+  ) {
     return Container(
       decoration: BoxDecoration(
         color: bgLight,
@@ -1118,6 +1161,7 @@ class LoginScreen extends StatelessWidget {
         border: Border.all(color: Colors.grey.shade300),
       ),
       child: TextField(
+        controller: controller, // Yazılanları hafızaya alan kısım
         obscureText: isPassword,
         decoration: InputDecoration(
           hintText: hint,
